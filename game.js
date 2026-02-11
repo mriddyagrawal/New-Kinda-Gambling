@@ -8,6 +8,8 @@ const CONFIG = {
     STEP_DELAY: 200, // ms between time steps
     BASE_PRICE: 100, // Base price for display
     PRICE_STEP: 5, // Price increment per level
+    BET_INTENSITY_STEP: 20, // Bet amount per intensity level
+    MAX_INTENSITY: 5, // Maximum bet intensity level
 };
 
 // Game State
@@ -75,7 +77,7 @@ function createGrid() {
             cell.dataset.timeStep = timeStep;
             
             // Calculate actual price for this level (inverted: top = high price)
-            const price = CONFIG.BASE_PRICE + (CONFIG.PRICE_LEVELS - 1 - priceLevel) * CONFIG.PRICE_STEP;
+            const price = getPriceFromLevel(priceLevel);
             
             // Add cell info display
             const info = document.createElement('div');
@@ -227,30 +229,19 @@ function calculateResults() {
     // Calculate total pool from ALL bets
     const totalPool = Object.values(gameState.bets).reduce((sum, bet) => sum + bet, 0);
     
-    // Calculate total bets on the final column (all price levels in last column)
-    let totalBetsOnFinalColumn = 0;
-    for (let priceLevel = 0; priceLevel < CONFIG.PRICE_LEVELS; priceLevel++) {
-        const columnCellKey = `${priceLevel}-${finalPoint.time}`;
-        totalBetsOnFinalColumn += gameState.bets[columnCellKey] || 0;
-    }
-    
     // Player's bet on the winning square
     const playerBetOnWinner = gameState.bets[finalCellKey] || 0;
 
     let resultMessage = '';
     let isWin = playerBetOnWinner > 0;
 
+    const finalPrice = getPriceFromLevel(finalPoint.price);
+
     if (isWin) {
-        // Player wins! Parimutuel payout from the final column pool
-        // If only player bet on this square in final column, they get all bets from that column
-        // Otherwise proportional to their share
-        const payout = totalBetsOnFinalColumn > 0 
-            ? Math.floor((playerBetOnWinner / totalBetsOnFinalColumn) * totalPool)
-            : totalPool;
+        // Player wins! Gets entire pool since it's single-player
+        const payout = totalPool;
         
         gameState.credits += payout;
-
-        const finalPrice = CONFIG.BASE_PRICE + (CONFIG.PRICE_LEVELS - 1 - finalPoint.price) * CONFIG.PRICE_STEP;
 
         resultMessage = `
             <p class="result-win">🎉 YOU WIN! 🎉</p>
@@ -274,8 +265,6 @@ function calculateResults() {
         });
     } else {
         // Player loses
-        const finalPrice = CONFIG.BASE_PRICE + (CONFIG.PRICE_LEVELS - 1 - finalPoint.price) * CONFIG.PRICE_STEP;
-        
         resultMessage = `
             <p class="result-loss">😔 YOU LOSE 😔</p>
             <p>Final price at T${finalPoint.time}: <strong>$${finalPrice}</strong></p>
@@ -304,6 +293,11 @@ function calculateResults() {
     
     gameState.isPlaying = false;
     updateUI();
+}
+
+// Helper function to get price from price level
+function getPriceFromLevel(priceLevel) {
+    return CONFIG.BASE_PRICE + (CONFIG.PRICE_LEVELS - 1 - priceLevel) * CONFIG.PRICE_STEP;
 }
 
 // Reset the game
@@ -356,7 +350,7 @@ function updateUI() {
         if (betAmount > 0) {
             cell.classList.add('has-bet');
             // Add intensity class based on bet amount
-            const intensity = Math.min(Math.floor(betAmount / 20), 5);
+            const intensity = Math.min(Math.floor(betAmount / CONFIG.BET_INTENSITY_STEP), CONFIG.MAX_INTENSITY);
             cell.dataset.betIntensity = intensity;
             
             betDisplay = document.createElement('div');
