@@ -199,6 +199,17 @@ header h1 {
     justify-content: space-between;
 }
 
+.bet-hint {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(255, 215, 0, 0.1);
+    border-left: 3px solid #ffd700;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    color: #ddd;
+    line-height: 1.4;
+}
+
 /* Status Message */
 .status-message {
     padding: 15px;
@@ -243,21 +254,22 @@ header h1 {
 .game-board {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
-    gap: 4px;
+    gap: 3px;
     padding: 20px;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.4);
     border-radius: 10px;
     border: 2px solid rgba(255, 215, 0, 0.3);
-    max-width: 600px;
+    max-width: 700px;
     aspect-ratio: 1;
+    position: relative;
 }
 
 /* Grid Cell */
 .cell {
     aspect-ratio: 1;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
+    background: rgba(20, 20, 40, 0.8);
+    border: 1px solid rgba(100, 100, 150, 0.3);
+    border-radius: 3px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -265,70 +277,243 @@ header h1 {
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
-    font-size: 0.7rem;
-    color: #666;
+    overflow: hidden;
 }
 
 .cell:hover {
     background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 215, 0, 0.5);
-    transform: scale(1.05);
+    border-color: rgba(255, 215, 0, 0.6);
+    transform: scale(1.08);
+    z-index: 5;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
 }
 
 .cell.no-bet-allowed {
     cursor: not-allowed;
-    opacity: 0.6;
+    opacity: 0.7;
 }
 
 .cell.no-bet-allowed:hover {
     transform: none;
+    box-shadow: none;
+}
+
+/* Cell Info Display */
+.cell-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.65rem;
+    color: #666;
+    pointer-events: none;
+    transition: all 0.3s ease;
+}
+
+.time-label {
+    font-size: 0.6rem;
+    color: #888;
+}
+
+.price-label {
+    font-size: 0.7rem;
+    color: #aaa;
+    font-weight: bold;
+}
+
+/* Active column effect (scrolling highlight) */
+.cell.active-column {
+    background: rgba(255, 215, 0, 0.15);
+    border-color: rgba(255, 215, 0, 0.4);
+    transform: scale(1.02);
+    z-index: 2;
+}
+
+.cell.active-column .cell-info {
+    color: #ddd;
+}
+
+.cell.active-column .time-label,
+.cell.active-column .price-label {
+    color: #ffd700;
+    text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
 }
 
 /* Cell with bet */
 .cell.has-bet {
     background: rgba(102, 126, 234, 0.3);
     border-color: rgba(102, 126, 234, 0.8);
+    box-shadow: 0 0 10px rgba(102, 126, 234, 0.4);
+}
+
+/* Bet intensity levels */
+.cell.has-bet[data-bet-intensity="1"] {
+    background: rgba(102, 126, 234, 0.3);
+}
+
+.cell.has-bet[data-bet-intensity="2"] {
+    background: rgba(102, 126, 234, 0.4);
+}
+
+.cell.has-bet[data-bet-intensity="3"] {
+    background: rgba(102, 126, 234, 0.5);
+}
+
+.cell.has-bet[data-bet-intensity="4"] {
+    background: rgba(102, 126, 234, 0.6);
+}
+
+.cell.has-bet[data-bet-intensity="5"] {
+    background: rgba(102, 126, 234, 0.7);
 }
 
 .cell .bet-amount {
-    font-size: 0.9rem;
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.75rem;
     font-weight: bold;
     color: #ffd700;
-    margin-top: 3px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 1px 3px;
+    border-radius: 3px;
+    pointer-events: none;
 }
 
-/* Cursor position */
-.cell.cursor {
-    background: rgba(255, 215, 0, 0.6);
+/* Price path visualization */
+.cell.price-path {
+    background: linear-gradient(135deg, rgba(0, 200, 255, 0.4), rgba(0, 255, 200, 0.4));
+    border-color: rgba(0, 255, 200, 0.8);
+    box-shadow: 0 0 15px rgba(0, 255, 200, 0.5);
+    animation: pathGlow 0.5s ease-in-out;
+}
+
+@keyframes pathGlow {
+    0% { 
+        box-shadow: 0 0 5px rgba(0, 255, 200, 0.3);
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 25px rgba(0, 255, 200, 0.8);
+        transform: scale(1.1);
+    }
+    100% { 
+        box-shadow: 0 0 15px rgba(0, 255, 200, 0.5);
+        transform: scale(1);
+    }
+}
+
+/* Current price position */
+.cell.current-price {
+    background: rgba(255, 215, 0, 0.7);
     border-color: #ffd700;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
-    animation: cursorPulse 0.3s ease-in-out;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.9);
+    animation: currentPulse 0.4s ease-in-out infinite;
     z-index: 10;
 }
 
-@keyframes cursorPulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.15); }
+@keyframes currentPulse {
+    0%, 100% { 
+        transform: scale(1);
+        box-shadow: 0 0 25px rgba(255, 215, 0, 0.9);
+    }
+    50% { 
+        transform: scale(1.15);
+        box-shadow: 0 0 35px rgba(255, 215, 0, 1);
+    }
+}
+
+/* Price movement indicators */
+.cell.price-up::before {
+    content: '↑';
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #00ff00;
+    font-size: 1.2rem;
+    font-weight: bold;
+    animation: priceMove 0.3s ease-out;
+}
+
+.cell.price-down::before {
+    content: '↓';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ff4444;
+    font-size: 1.2rem;
+    font-weight: bold;
+    animation: priceMove 0.3s ease-out;
+}
+
+.cell.price-flat::before {
+    content: '→';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: #888;
+    font-size: 1rem;
+    font-weight: bold;
+    opacity: 0.5;
+}
+
+@keyframes priceMove {
+    0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; transform: translateX(-50%) translateY(0); }
 }
 
 /* Final landing cell */
-.cell.final {
-    background: rgba(0, 255, 0, 0.4);
+.cell.final-price {
+    background: linear-gradient(135deg, rgba(0, 255, 100, 0.6), rgba(100, 255, 0, 0.6));
     border-color: #00ff00;
-    box-shadow: 0 0 30px rgba(0, 255, 0, 0.8);
-    animation: finalLanding 1s ease-in-out;
+    box-shadow: 0 0 40px rgba(0, 255, 0, 0.9);
+    animation: finalLanding 1.2s ease-in-out;
+    z-index: 15;
 }
 
 @keyframes finalLanding {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.3) rotate(5deg); }
-    100% { transform: scale(1); }
+    0% { 
+        transform: scale(1); 
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+    }
+    25% { 
+        transform: scale(1.4) rotate(5deg); 
+        box-shadow: 0 0 50px rgba(0, 255, 0, 1);
+    }
+    50% { 
+        transform: scale(1.3) rotate(-5deg); 
+        box-shadow: 0 0 50px rgba(0, 255, 0, 1);
+    }
+    75% { 
+        transform: scale(1.35) rotate(3deg); 
+        box-shadow: 0 0 45px rgba(0, 255, 0, 0.9);
+    }
+    100% { 
+        transform: scale(1); 
+        box-shadow: 0 0 40px rgba(0, 255, 0, 0.9);
+    }
 }
 
 /* Losing cell with bet */
 .cell.lost-bet {
     background: rgba(255, 0, 0, 0.3);
     border-color: rgba(255, 0, 0, 0.6);
+    animation: lostBetFade 0.5s ease-out;
+}
+
+@keyframes lostBetFade {
+    0% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+/* Winning path cells with bets */
+.cell.path-win {
+    background: linear-gradient(135deg, rgba(0, 255, 150, 0.5), rgba(100, 255, 200, 0.5));
+    border-color: #00ff88;
+    box-shadow: 0 0 20px rgba(0, 255, 150, 0.7);
 }
 
 /* Footer */
