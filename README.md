@@ -84,7 +84,8 @@ The cursor starts at a random position and takes 20-50 steps (based on volatilit
 |------------|----------|-------|----------|
 | 1-3 (Low)  | 1 cell   | ~20   | Predictable, local movement |
 | 4-6 (Med)  | 2 cells  | ~30   | Moderate randomness |
-| 7-10 (High)| 3-4 cells| ~50   | Erratic, large jumps |
+| 7-9 (High) | 3 cells  | ~40   | Erratic, large jumps |
+| 10 (Max)   | 4 cells  | ~50   | Maximum chaos |
 
 ## 🎲 Strategy Tips
 
@@ -95,8 +96,7 @@ The cursor starts at a random position and takes 20-50 steps (based on volatilit
 
 ## 📸 Screenshots
 
-![Game Board](screenshot-placeholder.png)
-*The main game interface with grid, controls, and betting information*
+*Coming soon: Screenshots of the game interface with grid, controls, and betting information*
 
 ## 🤝 Contributing
 

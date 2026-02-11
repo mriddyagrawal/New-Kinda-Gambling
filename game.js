@@ -172,7 +172,7 @@ async function startGame() {
 // Get next move based on volatility
 function getNextMove(currentRow, currentCol, volatility) {
     // Higher volatility = larger possible jumps
-    const maxJump = Math.ceil(volatility / 3); // volatility 1-3: 1 cell, 4-6: 2 cells, 7-10: 3-4 cells
+    const maxJump = Math.ceil(volatility / 3); // volatility 1-3: 1 cell, 4-6: 2 cells, 7-9: 3 cells, 10: 4 cells
     
     const rowChange = Math.floor(Math.random() * (maxJump * 2 + 1)) - maxJump;
     const colChange = Math.floor(Math.random() * (maxJump * 2 + 1)) - maxJump;
