@@ -306,6 +306,7 @@ header h1 {
     font-size: 0.65rem;
     color: #666;
     pointer-events: none;
+    transition: all 0.3s ease;
 }
 
 .time-label {
@@ -317,6 +318,24 @@ header h1 {
     font-size: 0.7rem;
     color: #aaa;
     font-weight: bold;
+}
+
+/* Active column effect (scrolling highlight) */
+.cell.active-column {
+    background: rgba(255, 215, 0, 0.15);
+    border-color: rgba(255, 215, 0, 0.4);
+    transform: scale(1.02);
+    z-index: 2;
+}
+
+.cell.active-column .cell-info {
+    color: #ddd;
+}
+
+.cell.active-column .time-label,
+.cell.active-column .price-label {
+    color: #ffd700;
+    text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
 }
 
 /* Cell with bet */
@@ -488,6 +507,13 @@ header h1 {
 @keyframes lostBetFade {
     0% { opacity: 1; }
     100% { opacity: 0.6; }
+}
+
+/* Winning path cells with bets */
+.cell.path-win {
+    background: linear-gradient(135deg, rgba(0, 255, 150, 0.5), rgba(100, 255, 200, 0.5));
+    border-color: #00ff88;
+    box-shadow: 0 0 20px rgba(0, 255, 150, 0.7);
 }
 
 /* Footer */

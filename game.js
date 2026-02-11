@@ -158,7 +158,10 @@ async function startGame() {
         // Record current position in path
         gameState.pricePath.push({ time: timeStep, price: currentPriceLevel });
         
-        // Highlight current cell
+        // Highlight current column
+        highlightColumn(timeStep, true);
+        
+        // Highlight current cell with glowing marker
         const cell = getCellElement(currentPriceLevel, timeStep);
         cell.classList.add('price-path');
         cell.classList.add('current-price');
@@ -175,17 +178,25 @@ async function startGame() {
         // Remove current highlight but keep path marking
         cell.classList.remove('current-price');
         
+        // Dim the previous column
+        if (timeStep > 0) {
+            highlightColumn(timeStep - 1, false);
+        }
+        
         // Calculate next price level based on volatility (for next iteration)
         if (timeStep < CONFIG.TIME_STEPS - 1) {
             currentPriceLevel = getNextPriceLevel(currentPriceLevel, gameState.volatility);
         }
     }
 
-    // Highlight final position
+    // Highlight final position and final column
     const finalPriceLevel = gameState.pricePath[gameState.pricePath.length - 1].price;
     const finalTimeStep = gameState.pricePath[gameState.pricePath.length - 1].time;
     const finalCell = getCellElement(finalPriceLevel, finalTimeStep);
     finalCell.classList.add('final-price');
+    
+    // Keep final column highlighted
+    highlightColumn(finalTimeStep, true);
 
     // Calculate and display results
     await sleep(500);
@@ -209,57 +220,67 @@ function getNextPriceLevel(currentLevel, volatility) {
 
 // Calculate results and payouts
 function calculateResults() {
-    // Determine winning cells (all cells on the price path)
-    const winningCells = new Set();
-    gameState.pricePath.forEach(point => {
-        const cellKey = `${point.price}-${point.time}`;
-        winningCells.add(cellKey);
-    });
+    // Only the FINAL COLUMN square wins (parimutuel for that column)
+    const finalPoint = gameState.pricePath[gameState.pricePath.length - 1];
+    const finalCellKey = `${finalPoint.price}-${finalPoint.time}`;
     
-    // Calculate total pool and player's winning amount
+    // Calculate total pool from ALL bets
     const totalPool = Object.values(gameState.bets).reduce((sum, bet) => sum + bet, 0);
-    let playerWinnings = 0;
-    let totalBetOnWinningCells = 0;
     
-    // Check which of player's bets are on winning cells
-    Object.entries(gameState.bets).forEach(([cellKey, betAmount]) => {
-        if (winningCells.has(cellKey)) {
-            playerWinnings += betAmount;
-            totalBetOnWinningCells += betAmount;
-        }
-    });
+    // Calculate total bets on the final column (all price levels in last column)
+    let totalBetsOnFinalColumn = 0;
+    for (let priceLevel = 0; priceLevel < CONFIG.PRICE_LEVELS; priceLevel++) {
+        const columnCellKey = `${priceLevel}-${finalPoint.time}`;
+        totalBetsOnFinalColumn += gameState.bets[columnCellKey] || 0;
+    }
+    
+    // Player's bet on the winning square
+    const playerBetOnWinner = gameState.bets[finalCellKey] || 0;
 
     let resultMessage = '';
-    let isWin = playerWinnings > 0;
+    let isWin = playerBetOnWinner > 0;
 
     if (isWin) {
-        // Player wins! In single-player parimutuel, winner gets the entire pool
-        const payout = totalPool;
+        // Player wins! Parimutuel payout from the final column pool
+        // If only player bet on this square in final column, they get all bets from that column
+        // Otherwise proportional to their share
+        const payout = totalBetsOnFinalColumn > 0 
+            ? Math.floor((playerBetOnWinner / totalBetsOnFinalColumn) * totalPool)
+            : totalPool;
+        
         gameState.credits += payout;
 
-        const finalPoint = gameState.pricePath[gameState.pricePath.length - 1];
         const finalPrice = CONFIG.BASE_PRICE + (CONFIG.PRICE_LEVELS - 1 - finalPoint.price) * CONFIG.PRICE_STEP;
 
         resultMessage = `
             <p class="result-win">🎉 YOU WIN! 🎉</p>
-            <p>Price path crossed <strong>${winningCells.size}</strong> cells you bet on!</p>
             <p>Final price at T${finalPoint.time}: <strong>$${finalPrice}</strong></p>
-            <p>Your bets on winning cells: <strong>${totalBetOnWinningCells} credits</strong></p>
+            <p>Price Level: <strong>${finalPoint.price}</strong></p>
+            <p>Your bet on winning square: <strong>${playerBetOnWinner} credits</strong></p>
             <p>Total pool: <strong>${totalPool} credits</strong></p>
             <p>Payout: <strong>+${payout} credits</strong></p>
         `;
 
         elements.creditsDisplay.classList.add('win');
         setTimeout(() => elements.creditsDisplay.classList.remove('win'), 500);
+        
+        // Highlight winning cells along the path
+        gameState.pricePath.forEach(point => {
+            const cellKey = `${point.price}-${point.time}`;
+            if (gameState.bets[cellKey]) {
+                const cell = getCellElement(point.price, point.time);
+                cell.classList.add('path-win');
+            }
+        });
     } else {
         // Player loses
-        const finalPoint = gameState.pricePath[gameState.pricePath.length - 1];
         const finalPrice = CONFIG.BASE_PRICE + (CONFIG.PRICE_LEVELS - 1 - finalPoint.price) * CONFIG.PRICE_STEP;
         
         resultMessage = `
             <p class="result-loss">😔 YOU LOSE 😔</p>
             <p>Final price at T${finalPoint.time}: <strong>$${finalPrice}</strong></p>
-            <p>The price path did not cross any cells you bet on.</p>
+            <p>Price Level: <strong>${finalPoint.price}</strong></p>
+            <p>You did not bet on the winning square.</p>
             <p>Total lost: <strong>-${totalPool} credits</strong></p>
         `;
 
@@ -268,7 +289,7 @@ function calculateResults() {
 
         // Mark losing bet cells
         Object.keys(gameState.bets).forEach(cellKey => {
-            if (!winningCells.has(cellKey)) {
+            if (cellKey !== finalCellKey) {
                 const [priceLevel, timeStep] = cellKey.split('-').map(Number);
                 const cell = getCellElement(priceLevel, timeStep);
                 cell.classList.add('lost-bet');
@@ -375,8 +396,20 @@ function clearCursorClasses() {
 // Clear path classes from all cells
 function clearPathClasses() {
     gameState.gridCells.forEach(cell => {
-        cell.classList.remove('price-path', 'current-price', 'final-price');
+        cell.classList.remove('price-path', 'current-price', 'final-price', 'active-column', 'path-win');
     });
+}
+
+// Highlight a column (for scrolling effect)
+function highlightColumn(timeStep, active) {
+    for (let priceLevel = 0; priceLevel < CONFIG.PRICE_LEVELS; priceLevel++) {
+        const cell = getCellElement(priceLevel, timeStep);
+        if (active) {
+            cell.classList.add('active-column');
+        } else {
+            cell.classList.remove('active-column');
+        }
+    }
 }
 
 // Draw visual connection line between cells (SVG overlay could be added here)
